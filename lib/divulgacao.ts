@@ -2,9 +2,14 @@
  * Divulgação automática: a cada checagem, escolhe os produtos em alta que
  * ainda não foram enviados e manda para o grupo do Telegram e do WhatsApp.
  */
-import { cfg } from "./config";
-import { enviarTelegram, escapar, telegramGrupoConfigurado } from "./telegram";
-import { NOMES, type IdPlataforma, type Produto } from "./types";
+import { cfg, type Chave } from "./config";
+import {
+  enviarTelegram,
+  enviarTelegramFoto,
+  escapar,
+  telegramGrupoConfigurado,
+} from "./telegram";
+import type { IdPlataforma, Produto } from "./types";
 import { enviarWhatsApp, whatsappConfigurado } from "./whatsapp";
 
 export type ListaProdutos = { plataforma: IdPlataforma; produtos: Produto[] };
@@ -44,38 +49,70 @@ export function escolher(
   return escolhidos;
 }
 
-function dados(p: Produto): string {
-  return [
-    p.preco !== null ? `💰 ${brl(p.preco)}` : "",
-    p.vendas !== null ? `🛒 ${p.vendas.toLocaleString("pt-BR")} vendidos` : "",
-    p.posicao !== null && p.vendas === null ? `🏆 #${p.posicao} mais vendido` : "",
-    p.avaliacao !== null ? `⭐ ${p.avaliacao.toFixed(1)}` : "",
-  ]
-    .filter(Boolean)
-    .join(" · ");
+/** Link de cupons da plataforma (CUPONS_SHOPEE / CUPONS_MELI). Vazio = a linha não sai. */
+function linkCupons(p: Produto): string {
+  const chave: Chave | null =
+    p.plataforma === "shopee" ? "CUPONS_SHOPEE" : p.plataforma === "meli" ? "CUPONS_MELI" : null;
+  return chave ? cfg(chave) : "";
+}
+
+/** Oferta no formato do grupo, para o Telegram (HTML). */
+export function textoOfertaTelegram(p: Produto): string {
+  const linhas: string[] = [];
+  linhas.push(`🛍️ <b>${escapar(p.nome)}</b>`);
+  linhas.push("");
+  if (p.preco !== null) linhas.push(`✅ <b>Por: ${escapar(brl(p.preco))}</b>`);
+  linhas.push("");
+  linhas.push(`🛒 <b>Compre aqui:</b> 👇`);
+  linhas.push(escapar(p.link || ""));
+  const cupons = linkCupons(p);
+  if (cupons) {
+    linhas.push("");
+    linhas.push(`🎟️ <b>Cupons imperdíveis:</b> 👇`);
+    linhas.push(escapar(cupons));
+  }
+  linhas.push("");
+  linhas.push(`⚠️ Promoção sujeita a alteração a qualquer momento.`);
+  return linhas.join("\n");
+}
+
+/** Mesma oferta para o WhatsApp (formatação com *negrito*). */
+export function textoOfertaWhatsApp(p: Produto): string {
+  const linhas: string[] = [];
+  linhas.push(`🛍️ *${p.nome}*`);
+  linhas.push("");
+  if (p.preco !== null) linhas.push(`✅ *Por: ${brl(p.preco)}*`);
+  linhas.push("");
+  linhas.push(`🛒 *Compre aqui:* 👇`);
+  linhas.push(p.link || "");
+  const cupons = linkCupons(p);
+  if (cupons) {
+    linhas.push("");
+    linhas.push(`🎟️ *Cupons imperdíveis:* 👇`);
+    linhas.push(cupons);
+  }
+  linhas.push("");
+  linhas.push(`⚠️ Promoção sujeita a alteração a qualquer momento.`);
+  return linhas.join("\n");
 }
 
 export function textoWhatsApp(produtos: Produto[]): string {
-  return (
-    "🔥 *PRODUTOS EM ALTA AGORA*\n\n" +
-    produtos
-      .map((p) => `*${p.nome}*\n${dados(p)}\n🏬 ${NOMES[p.plataforma]}\n👉 ${p.link}`)
-      .join("\n\n")
-  );
+  return produtos.map(textoOfertaWhatsApp).join("\n\n———\n\n");
 }
 
-export function textoTelegram(produtos: Produto[]): string {
-  return (
-    "🔥 <b>PRODUTOS EM ALTA AGORA</b>\n\n" +
-    produtos
-      .map(
-        (p) =>
-          `<b>${escapar(p.nome)}</b>\n${escapar(dados(p))}\n🏬 ${NOMES[p.plataforma]}\n👉 <a href="${escapar(
-            p.link || ""
-          )}">Ver oferta</a>`
-      )
-      .join("\n\n")
-  );
+/** Envia uma oferta ao grupo do Telegram: com foto quando houver, senão só texto. */
+async function enviarOfertaTelegram(p: Produto): Promise<void> {
+  const legenda = textoOfertaTelegram(p);
+  const temFoto = Boolean(p.imagem && /^https?:\/\//.test(p.imagem));
+  if (temFoto && legenda.length <= 1000) {
+    try {
+      await enviarTelegramFoto(p.imagem as string, legenda, "grupo");
+      return;
+    } catch {
+      // Se a foto falhar (link quebrado, por exemplo), manda só o texto.
+    }
+  }
+  await enviarTelegram(legenda, "grupo");
 }
 
 export type ResultadoDivulgacao = { enviados: Produto[]; falhas: string[] };
@@ -101,7 +138,7 @@ export async function divulgar(
 
   if (telegramGrupoConfigurado()) {
     try {
-      await enviarTelegram(textoTelegram(produtos), "grupo");
+      for (const p of produtos) await enviarOfertaTelegram(p);
       algumEnvio = true;
     } catch (e) {
       falhas.push(e instanceof Error ? e.message : "Falha no Telegram.");

@@ -95,3 +95,19 @@ export async function enviarTelegram(
     disable_web_page_preview: true,
   });
 }
+
+/** Envia uma foto com legenda (até 1024 caracteres, em HTML). */
+export async function enviarTelegramFoto(
+  foto: string,
+  legenda: string,
+  destino: "voce" | "grupo" = "voce"
+): Promise<void> {
+  const chat = destino === "grupo" ? cfg("TELEGRAM_GRUPO_ID") : cfg("TELEGRAM_CHAT_ID");
+  if (!chat) throw new Error("Telegram não configurado.");
+  await api("sendPhoto", {
+    chat_id: chat,
+    photo: foto,
+    caption: legenda,
+    parse_mode: "HTML",
+  });
+}
