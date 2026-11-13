@@ -1,0 +1,16 @@
+LOGOTIPOS DAS PLATAFORMAS
+=========================
+
+Coloque nesta pasta o logotipo oficial de cada plataforma, com estes nomes:
+
+  shopee.png    Shopee
+  tiktok.png    TikTok Shop
+  meli.png      Mercado Livre
+
+Use imagens quadradas (por exemplo 128 x 128 pixels), de preferência com fundo
+transparente. Baixe os arquivos na página de imprensa / kit de marca de cada
+empresa e siga as regras de uso de marca delas.
+
+Depois de colocar os arquivos, recarregue o app: os logotipos aparecem nas
+vendas recentes, nos cartões de produto e no resumo por plataforma. Enquanto um
+arquivo não existir, o app mostra a inicial da plataforma no lugar.
