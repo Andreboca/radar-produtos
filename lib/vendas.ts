@@ -118,7 +118,7 @@ async function coletar(dias: number): Promise<Coleta> {
   };
 
   await fonte("shopee", shopee.shopeeConfigurada(), () => shopee.conversoes(inicio, fim));
-  await fonte("tiktok", tiktok.tiktokConfigurado(), () => tiktok.pedidosAfiliado(inicio, fim));
+  await fonte("tiktok", tiktok.tiktokVendasConfigurado(), () => tiktok.pedidosAfiliado(inicio, fim));
   fontes.push({ plataforma: "meli", nome: NOMES.meli, conectada: false, automatica: false });
 
   // Lançamentos antigos feitos à mão continuam contando, se existirem.
@@ -204,7 +204,7 @@ let vigiando = false;
  */
 export async function vigiarVendas(): Promise<number> {
   if (vigiando) return 0;
-  if (!shopee.shopeeConfigurada() && !tiktok.tiktokConfigurado()) return 0;
+  if (!shopee.shopeeConfigurada() && !tiktok.tiktokVendasConfigurado()) return 0;
   vigiando = true;
   try {
     const { vendas } = await coletar(7);
