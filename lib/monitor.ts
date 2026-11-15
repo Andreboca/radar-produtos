@@ -9,6 +9,7 @@ import path from "path";
 import { divulgacaoConfigurada, divulgar } from "./divulgacao";
 import { registrar } from "./historico";
 import { destacarComIA } from "./ia";
+import * as fastmoss from "./fastmoss";
 import * as meli from "./meli";
 import * as shopee from "./shopee";
 import * as tiktok from "./tiktok";
@@ -127,7 +128,17 @@ async function coletar(config: ConfigMonitor): Promise<{ listas: Lista[]; erros:
       });
     }
   }
-  if (tiktok.tiktokConfigurado()) {
+  // A FastMoss entrega o ranking de mais vendidos do TikTok Shop no Brasil, que
+  // a API oficial de criador ainda não libera aqui. Quando a chave existe, ela
+  // é a fonte; só na falta dela caímos na API oficial.
+  if (fastmoss.fastmossConfigurado()) {
+    tarefas.push({
+      chave: "tiktok:BR",
+      rotulo: "mais vendidos no Brasil",
+      plataforma: "tiktok",
+      fn: () => fastmoss.maisVendidos("BR", "gmv"),
+    });
+  } else if (tiktok.tiktokConfigurado()) {
     for (const t of termos) {
       tarefas.push({
         chave: `tiktok:${t || "*"}`,
