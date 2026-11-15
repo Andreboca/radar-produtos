@@ -80,8 +80,14 @@ function montar(item: ItemFastMoss, regiao: Regiao, posicao: number): Produto | 
   };
 }
 
-/** Os produtos mais vendidos da região, do dia anterior, em ordem de unidades. */
-export async function maisVendidos(regiao: Regiao, limite = 20): Promise<Produto[]> {
+/**
+ * Os produtos mais vendidos da região, do dia anterior, em ordem de unidades.
+ *
+ * O limite padrão é 10 de propósito: a FastMoss cobra por lote de 10
+ * (cota = ceil(pagesize / 10)), então pedir 20 custa o dobro. Busca sem
+ * resultado não é cobrada.
+ */
+export async function maisVendidos(regiao: Regiao, limite = 10): Promise<Produto[]> {
   const token = cfg("FASTMOSS_TOKEN");
   if (!token) throw new Error("Falta a chave FASTMOSS_TOKEN.");
 
