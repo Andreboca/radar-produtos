@@ -21,6 +21,31 @@ export type Produto = {
 
 export type Tendencia = { termo: string; url: string };
 
+/** Um vídeo do TikTok que vendeu um produto. Para estudar o gancho e modelar. */
+export type VideoProduto = {
+  id: string;
+  descricao: string;
+  capa: string | null;
+  link: string | null;
+  views: number | null;
+  curtidas: number | null;
+  comentarios: number | null;
+  compartilhamentos: number | null;
+  vendas: number | null;
+  faturamento: number | null;
+  moeda: string | null;
+  /** O vídeo foi impulsionado com anúncio pago. */
+  anuncio: boolean;
+  publicadoEm: number | null;
+};
+
+/** Como ordenar os vídeos de um produto. */
+export type OrdemVideo = "gmv" | "units_sold" | "play_count" | "digg_count";
+
+export function ehOrdemVideo(v: unknown): v is OrdemVideo {
+  return v === "gmv" || v === "units_sold" || v === "play_count" || v === "digg_count";
+}
+
 export type ResultadoPlataforma = {
   plataforma: IdPlataforma;
   nome: string;

@@ -9,6 +9,7 @@ import Painel from "./painel";
 import Simulador from "./simulador";
 import TopVendendo from "./top";
 import GeracaoVideo from "./video";
+import JanelaVideos from "./videos";
 import CriacaoImagem from "./imagem";
 import { PLATAFORMAS_PADRAO, calcular, type Plataforma } from "@/lib/fees";
 import {
@@ -136,11 +137,13 @@ function CartaoProduto({
   onMetricas,
   onComparar,
   onCalcular,
+  onVideos,
 }: {
   p: Produto;
   onMetricas: (p: Produto) => void;
   onComparar?: (nome: string) => void;
   onCalcular: (p: Produto) => void;
+  onVideos?: (p: Produto) => void;
 }) {
   const sinais = [
     p.faturamento != null && p.faturamento > 0 ? `${dinheiro(p.faturamento, p.moeda)} faturados` : "",
@@ -183,6 +186,11 @@ function CartaoProduto({
             Analisar métricas
           </button>
           <div className="mini">
+            {onVideos && p.plataforma === "tiktok" && (
+              <button className="link" onClick={() => onVideos(p)}>
+                Vídeos que vendem
+              </button>
+            )}
             {onComparar && (
               <button className="link" onClick={() => onComparar(p.nome)}>
                 Comparar
@@ -234,6 +242,7 @@ export default function Pagina() {
   const [status, setStatus] = useState<Status | null>(null);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [emAnalise, setEmAnalise] = useState<Produto | null>(null);
+  const [emVideos, setEmVideos] = useState<Produto | null>(null);
 
   // Produtos em alta
   const [categoriaMeli, setCategoriaMeli] = useState("");
@@ -533,6 +542,7 @@ export default function Pagina() {
                   onMetricas={setEmAnalise}
                   onComparar={comparar}
                   onCalcular={calcularLucro}
+                  onVideos={setEmVideos}
                 />
               ))}
             </div>
@@ -730,6 +740,7 @@ export default function Pagina() {
       </main>
 
       {emAnalise && <JanelaMetricas produto={emAnalise} onFechar={() => setEmAnalise(null)} />}
+      {emVideos && <JanelaVideos produto={emVideos} onFechar={() => setEmVideos(null)} />}
     </div>
   );
 }
