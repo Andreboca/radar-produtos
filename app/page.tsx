@@ -13,9 +13,11 @@ import CriacaoImagem from "./imagem";
 import { PLATAFORMAS_PADRAO, calcular, type Plataforma } from "@/lib/fees";
 import {
   NOMES,
+  REGIOES,
   type Categoria,
   type IdPlataforma,
   type Produto,
+  type Regiao,
   type ResultadoPlataforma,
 } from "@/lib/types";
 
@@ -97,6 +99,9 @@ const MENU: { id: Aba; grupo: string; rotulo: string; titulo: string; texto: str
 const GRUPOS = ["Visão geral", "Produtos", "Criação", "Automação"];
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+/** Preço na moeda do produto: BRL no Brasil, USD nos EUA, GBP no Reino Unido. */
+const dinheiro = (n: number, moeda?: string | null) =>
+  n.toLocaleString("pt-BR", { style: "currency", currency: moeda || "BRL" });
 const inteiro = (n: number) => n.toLocaleString("pt-BR");
 const corLucro = (n: number) => (n > 0 ? "bom" : "ruim");
 
@@ -160,7 +165,9 @@ function CartaoProduto({
       <div className="produto-corpo">
         <h3>{p.nome}</h3>
         {p.loja && <p className="aviso">{p.loja}</p>}
-        <p className="preco">{p.preco !== null ? brl(p.preco) : "Preço não informado"}</p>
+        <p className="preco">
+          {p.preco !== null ? dinheiro(p.preco, p.moeda) : "Preço não informado"}
+        </p>
         <p className="aviso">{sinais.length ? sinais.join(" · ") : "Sem dados de venda informados"}</p>
         <div className="produto-acoes">
           {p.link ? (
@@ -228,6 +235,7 @@ export default function Pagina() {
 
   // Produtos em alta
   const [categoriaMeli, setCategoriaMeli] = useState("");
+  const [regiao, setRegiao] = useState<Regiao>("BR");
   const [termo, setTermo] = useState("");
   const [buscando, setBuscando] = useState(false);
   const [vendidos, setVendidos] = useState<ResultadoPlataforma[]>([]);
@@ -277,7 +285,7 @@ export default function Pagina() {
     setErro("");
     setBuscando(true);
     try {
-      setVendidos(await chamar("/api/mais-vendidos", { categoriaMeli, termo }));
+      setVendidos(await chamar("/api/mais-vendidos", { categoriaMeli, termo, regiao }));
       setAtualizado(new Date());
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Erro inesperado.");
@@ -412,6 +420,20 @@ export default function Pagina() {
 
             <div className="painel">
               <div className="linha">
+                <div className="campo">
+                  <label htmlFor="regiao">País (TikTok Shop)</label>
+                  <select
+                    id="regiao"
+                    value={regiao}
+                    onChange={(e) => setRegiao(e.target.value as Regiao)}
+                  >
+                    {REGIOES.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.nome}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div className="campo">
                   <label htmlFor="termo">Palavra-chave (Shopee e TikTok Shop)</label>
                   <input
