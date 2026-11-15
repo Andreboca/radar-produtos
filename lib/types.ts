@@ -15,6 +15,8 @@ export type Produto = {
   loja: string | null;
   /** Código ISO da moeda do preço (BRL, USD, GBP). Ausente = BRL. */
   moeda?: string | null;
+  /** Quanto o produto faturou no período (GMV), na moeda acima. */
+  faturamento?: number | null;
 };
 
 export type Tendencia = { termo: string; url: string };
@@ -46,6 +48,16 @@ export type Regiao = (typeof REGIOES)[number]["id"];
 
 export function ehRegiao(v: unknown): v is Regiao {
   return REGIOES.some((r) => r.id === v);
+}
+
+/**
+ * Como ordenar o ranking do TikTok Shop. "gmv" é faturamento: mostra quem está
+ * levando mais dinheiro, não quem vendeu mais peças baratas.
+ */
+export type Ordem = "gmv" | "units_sold" | "growth_rate";
+
+export function ehOrdem(v: unknown): v is Ordem {
+  return v === "gmv" || v === "units_sold" || v === "growth_rate";
 }
 
 export const NOMES: Record<IdPlataforma, string> = {

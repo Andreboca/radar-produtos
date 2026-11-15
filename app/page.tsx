@@ -16,6 +16,7 @@ import {
   REGIOES,
   type Categoria,
   type IdPlataforma,
+  type Ordem,
   type Produto,
   type Regiao,
   type ResultadoPlataforma,
@@ -142,6 +143,7 @@ function CartaoProduto({
   onCalcular: (p: Produto) => void;
 }) {
   const sinais = [
+    p.faturamento != null && p.faturamento > 0 ? `${dinheiro(p.faturamento, p.moeda)} faturados` : "",
     p.vendas !== null ? `${inteiro(p.vendas)} vendas` : p.posicao !== null ? `#${p.posicao} mais vendido` : "",
     p.avaliacao !== null ? `★ ${p.avaliacao.toFixed(1)}` : "",
     p.comissaoPct !== null ? `${p.comissaoPct.toFixed(1)}% comissão` : "",
@@ -236,6 +238,7 @@ export default function Pagina() {
   // Produtos em alta
   const [categoriaMeli, setCategoriaMeli] = useState("");
   const [regiao, setRegiao] = useState<Regiao>("BR");
+  const [ordem, setOrdem] = useState<Ordem>("gmv");
   const [termo, setTermo] = useState("");
   const [buscando, setBuscando] = useState(false);
   const [vendidos, setVendidos] = useState<ResultadoPlataforma[]>([]);
@@ -285,7 +288,7 @@ export default function Pagina() {
     setErro("");
     setBuscando(true);
     try {
-      setVendidos(await chamar("/api/mais-vendidos", { categoriaMeli, termo, regiao }));
+      setVendidos(await chamar("/api/mais-vendidos", { categoriaMeli, termo, regiao, ordem }));
       setAtualizado(new Date());
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Erro inesperado.");
@@ -432,6 +435,18 @@ export default function Pagina() {
                         {r.nome}
                       </option>
                     ))}
+                  </select>
+                </div>
+                <div className="campo">
+                  <label htmlFor="ordem">Ordenar por (TikTok Shop)</label>
+                  <select
+                    id="ordem"
+                    value={ordem}
+                    onChange={(e) => setOrdem(e.target.value as Ordem)}
+                  >
+                    <option value="gmv">Maior faturamento</option>
+                    <option value="units_sold">Mais unidades vendidas</option>
+                    <option value="growth_rate">Maior crescimento</option>
                   </select>
                 </div>
                 <div className="campo">

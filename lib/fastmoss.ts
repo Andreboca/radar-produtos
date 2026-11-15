@@ -9,12 +9,12 @@
  * Autenticação: cabeçalho Authorization: Bearer <token>
  */
 import { cfg } from "./config";
-import { REGIOES, type Produto, type Regiao } from "./types";
+import { REGIOES, type Ordem, type Produto, type Regiao } from "./types";
 
 const BASE = process.env.FASTMOSS_URL || "https://openapi.fastmoss.com";
 
-export { REGIOES, ehRegiao } from "./types";
-export type { Regiao } from "./types";
+export { REGIOES, ehOrdem, ehRegiao } from "./types";
+export type { Ordem, Regiao } from "./types";
 
 function moedaDa(regiao: Regiao): string {
   return REGIOES.find((r) => r.id === regiao)?.moeda || "BRL";
@@ -23,6 +23,7 @@ function moedaDa(regiao: Regiao): string {
 export function fastmossConfigurado(): boolean {
   return Boolean(cfg("FASTMOSS_TOKEN"));
 }
+
 
 /** Ontem em AAAA-MM-DD (UTC). O dia de hoje ainda está sendo fechado pela FastMoss. */
 function ontem(): string {
@@ -40,6 +41,8 @@ type ItemFastMoss = {
   units_sold?: number;
   gmv?: number;
   total_units_sold?: number;
+  total_gmv?: number;
+  growth_rate?: number;
   shop?: { name?: string };
 };
 
@@ -77,6 +80,7 @@ function montar(item: ItemFastMoss, regiao: Regiao, posicao: number): Produto | 
     link: `https://shop.tiktok.com/view/product/${id}?region=${regiao}`,
     loja: item.shop?.name?.trim() || null,
     moeda: moedaDa(regiao),
+    faturamento: numero(item.gmv) ?? numero(item.total_gmv),
   };
 }
 
@@ -87,7 +91,11 @@ function montar(item: ItemFastMoss, regiao: Regiao, posicao: number): Produto | 
  * (cota = ceil(pagesize / 10)), então pedir 20 custa o dobro. Busca sem
  * resultado não é cobrada.
  */
-export async function maisVendidos(regiao: Regiao, limite = 10): Promise<Produto[]> {
+export async function maisVendidos(
+  regiao: Regiao,
+  ordem: Ordem = "gmv",
+  limite = 10
+): Promise<Produto[]> {
   const token = cfg("FASTMOSS_TOKEN");
   if (!token) throw new Error("Falta a chave FASTMOSS_TOKEN.");
 
@@ -102,7 +110,7 @@ export async function maisVendidos(regiao: Regiao, limite = 10): Promise<Produto
         region: regiao,
         date_info: { type: "day", value: ontem() },
       },
-      orderby: [{ field: "units_sold", order: "desc" }],
+      orderby: [{ field: ordem, order: "desc" }],
       page: 1,
       pagesize: Math.min(Math.max(limite, 1), 50),
     }),

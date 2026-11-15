@@ -14,6 +14,7 @@ export async function POST(req: Request) {
   const categoria = String(corpo.categoriaMeli || "").trim();
   const termo = String(corpo.termo || "").trim().slice(0, 120);
   const regiao = fastmoss.ehRegiao(corpo.regiao) ? corpo.regiao : "BR";
+  const ordem = fastmoss.ehOrdem(corpo.ordem) ? corpo.ordem : "gmv";
   // A FastMoss entrega o ranking de mais vendidos do TikTok Shop, que a API
   // oficial de criador não dá — e funciona no Brasil, que ela ainda não libera.
   const viaFastMoss = fastmoss.fastmossConfigurado();
@@ -41,9 +42,15 @@ export async function POST(req: Request) {
     consultar("tiktok", viaFastMoss || tiktok.tiktokConfigurado(), async () => {
       if (viaFastMoss) {
         const nome = fastmoss.REGIOES.find((r) => r.id === regiao)?.nome || regiao;
+        const criterio =
+          ordem === "gmv"
+            ? "por faturamento"
+            : ordem === "growth_rate"
+            ? "por crescimento"
+            : "por unidades vendidas";
         return {
-          produtos: await fastmoss.maisVendidos(regiao),
-          aviso: `Mais vendidos do TikTok Shop em ${nome}, pela FastMoss (dados de ontem). O link é o da loja, não o seu link de afiliado.`,
+          produtos: await fastmoss.maisVendidos(regiao, ordem),
+          aviso: `TikTok Shop em ${nome}, ${criterio}, pela FastMoss (dados de ontem). O link é o da loja, não o seu link de afiliado.`,
         };
       }
       return {
