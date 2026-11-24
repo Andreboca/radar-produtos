@@ -124,7 +124,12 @@ async function coletar(config: ConfigMonitor): Promise<{ listas: Lista[]; erros:
         chave: `shopee:${t || "*"}`,
         rotulo: t || "geral",
         plataforma: "shopee",
-        fn: () => shopee.buscar(t, 2),
+        // Pega os mais vendidos e põe na frente os de maior comissão: é a
+        // ordem em que a divulgação escolhe o que vai para os grupos.
+        fn: async () =>
+          (await shopee.buscar(t, 2)).sort(
+            (a, b) => (b.comissaoPct ?? 0) - (a.comissaoPct ?? 0)
+          ),
       });
     }
   }

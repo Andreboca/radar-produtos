@@ -94,7 +94,7 @@ export async function buscar(
       preco: numero(n.priceMin),
       vendas: numero(n.sales),
       avaliacao: numero(n.ratingStar),
-      comissaoPct: comissao === null ? null : comissao * 100,
+      comissaoPct: comissao === null ? null : Math.round(comissao * 1000) / 10,
       posicao: ordem === 2 ? i + 1 : null,
       imagem: n.imageUrl || null,
       link: n.offerLink || n.productLink || null,
