@@ -50,6 +50,27 @@ export function escolher(
   return escolhidos;
 }
 
+/** Produtos atuais com link, dos enviados há mais tempo para os mais recentes. */
+export function maisAntigos(
+  listas: ListaProdutos[],
+  enviados: Record<string, number>,
+  quantidade: number
+): Produto[] {
+  const vistos = new Set<string>();
+  const todos: Produto[] = [];
+  for (const l of listas) {
+    for (const p of l.produtos) {
+      const k = chave(p);
+      if (!p.link || vistos.has(k)) continue;
+      vistos.add(k);
+      todos.push(p);
+    }
+  }
+  return todos
+    .sort((a, b) => (enviados[chave(a)] ?? 0) - (enviados[chave(b)] ?? 0))
+    .slice(0, quantidade);
+}
+
 /** Link de cupons da plataforma (CUPONS_SHOPEE / CUPONS_MELI). Vazio = a linha não sai. */
 function linkCupons(p: Produto): string {
   const chave: Chave | null =
@@ -132,6 +153,9 @@ export async function divulgar(
   }
 
   let produtos = escolher(listas, enviados, quantidade, janelaMs, agora);
+  // Tudo já saiu dentro da janela: em vez de deixar o grupo parado, reenvia as
+  // ofertas que saíram há mais tempo.
+  if (!produtos.length) produtos = maisAntigos(listas, enviados, quantidade);
   if (!produtos.length) return { enviados: [], falhas: [] };
 
   // O link do TikTok que vem da busca é o link comum. Só aqui, com a lista

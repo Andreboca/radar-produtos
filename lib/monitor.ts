@@ -127,7 +127,7 @@ async function coletar(config: ConfigMonitor): Promise<{ listas: Lista[]; erros:
         // Pega os mais vendidos e põe na frente os de maior comissão: é a
         // ordem em que a divulgação escolhe o que vai para os grupos.
         fn: async () =>
-          (await shopee.buscar(t, 2)).sort(
+          (await shopee.maisVendidosVariasPaginas(t)).sort(
             (a, b) => (b.comissaoPct ?? 0) - (a.comissaoPct ?? 0)
           ),
       });

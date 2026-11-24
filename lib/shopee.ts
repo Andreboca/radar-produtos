@@ -69,12 +69,13 @@ const numero = (v: unknown): number | null => {
 export async function buscar(
   termo: string,
   ordem: OrdemShopee = 2,
-  limite = 20
+  limite = 20,
+  pagina = 1
 ): Promise<Produto[]> {
   const filtros = [
     termo ? `keyword: ${JSON.stringify(termo)}` : "",
     `sortType: ${ordem}`,
-    "page: 1",
+    `page: ${pagina}`,
     `limit: ${limite}`,
   ]
     .filter(Boolean)
@@ -95,12 +96,38 @@ export async function buscar(
       vendas: numero(n.sales),
       avaliacao: numero(n.ratingStar),
       comissaoPct: comissao === null ? null : Math.round(comissao * 1000) / 10,
-      posicao: ordem === 2 ? i + 1 : null,
+      posicao: ordem === 2 ? (pagina - 1) * limite + i + 1 : null,
       imagem: n.imageUrl || null,
       link: n.offerLink || n.productLink || null,
       loja: n.shopName || null,
     };
   });
+}
+
+/**
+ * Várias páginas dos mais vendidos, sem repetir produto. Uma página só (20
+ * itens) acaba em 4 envios; com mais páginas o grupo tem oferta nova o dia todo.
+ * Se uma página falhar depois da primeira, fica o que já veio.
+ */
+export async function maisVendidosVariasPaginas(termo: string, paginas = 5): Promise<Produto[]> {
+  const todos: Produto[] = [];
+  const vistos = new Set<string>();
+  for (let p = 1; p <= paginas; p++) {
+    let lote: Produto[];
+    try {
+      lote = await buscar(termo, 2, 20, p);
+    } catch (e) {
+      if (p === 1) throw e;
+      break;
+    }
+    for (const item of lote) {
+      if (vistos.has(item.id)) continue;
+      vistos.add(item.id);
+      todos.push(item);
+    }
+    if (lote.length < 20) break;
+  }
+  return todos;
 }
 
 export type ConversaoShopee = {
